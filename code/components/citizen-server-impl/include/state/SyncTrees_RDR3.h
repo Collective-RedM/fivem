@@ -549,12 +549,73 @@ struct CPedAttachDataNode { };
 
 struct CPedHealthDataNode
 {
-	CPedHealthNodeData data;
+    CPedHealthNodeData data;
 
-	bool Parse(SyncParseState& state)
-	{
-		return true;
-	}
+    bool Parse(SyncParseState& state)
+    {
+        
+        bool m_hasMaxHealth = state.buffer.ReadBit();
+        bool m_maxHealthSetByScript = state.buffer.ReadBit();
+        bool m_isHealthRecharging = state.buffer.ReadBit(); // is regenerating outter core
+        bool unk4 = state.buffer.ReadBit();
+        bool unk5 = state.buffer.ReadBit(); 
+        bool unk0 = 0;
+
+        if (!m_hasMaxHealth)
+        {
+            //unk0 = *(v3 + 80) <= 0.0; // 
+            bool unk6 = state.buffer.ReadBit(); 
+            if (!unk6 )
+            {
+                bool unk7 = state.buffer.ReadBit(); 
+                if (!unk7 && unk4)
+                {
+
+                }
+            }
+            else
+            {
+              //  *(v3 + 32) = 0;
+              //   *(v3 + 40) = 0;
+              //  *(v3 + 56) = 0;
+              //    *(v3 + 48) = 0;
+              //     *v3 = 0;
+              //    *(v3 + 8) = 0;
+              //    *(v3 + 16) = 0;
+              //    *(v3 + 24) = 0;
+              //    *(v3 + 64) = 0;
+              //    *(v3 + 72) = 0;
+              //    *(v3 + 76) = 0;
+              //    *(v3 + 78) = 0;
+              //    *(v3 + 80) = 0;
+              //    *(v3 + 113) = 1;
+            
+            }
+        }
+        else
+        {
+
+        }
+
+        if (!m_maxHealthSetByScript)
+        {
+            auto unk1 = state.buffer.ReadBit(); // dont know the type
+        }
+
+        if (m_isHealthRecharging)
+        {
+            
+        }
+        else
+        {
+          //  *(v3 + 88) = 0;
+          //  *(v3 + 96) = 0;
+          //  *(v3 + 104) = 0;
+            
+        }
+
+        return true;
+    }
 };
 
 struct CPedMovementGroupDataNode { };
@@ -977,8 +1038,7 @@ struct DataNode_14359e920 { };
 struct DataNode_14359e790 { };
 struct DataNode_143599dc0 { };
 struct DataNode_1435995f0 { };
-struct DataNode_143599780 { };
-struct DataNode_143599910 { };
+struct DataNode_143599780 { }; // contains cause of death 
 struct DataNode_143599aa0 { };
 struct DataNode_143599c30 { };
 struct DataNode_143599f50 { };
@@ -1206,7 +1266,9 @@ struct SyncTree : public SyncTreeBaseImpl<TNode, true>
 
 	virtual CPedHealthNodeData* GetPedHealth() override
 	{
-		return nullptr;
+		auto [hasNode, node] = this->template GetData<CPedHealthDataNode>();
+
+		return (hasNode) ? &node->data : nullptr;
 	}
 
 	virtual CVehicleHealthNodeData* GetVehicleHealth() override
@@ -1442,7 +1504,7 @@ using CAnimalSyncTree = SyncTree<
 				NodeIds<127, 127, 0>,
 				NodeWrapper<NodeIds<127, 127, 0>, DataNode_1435995f0>,
 				NodeWrapper<NodeIds<127, 127, 0>, DataNode_143599780>,
-				NodeWrapper<NodeIds<127, 127, 0>, DataNode_143599910>
+				NodeWrapper<NodeIds<127, 127, 0>, CPedHealthDataNode>
 			>,
 			ParentNode<
 				NodeIds<87, 87, 0>,
@@ -1835,7 +1897,7 @@ using CPedSyncTree = SyncTree<
 				NodeIds<127, 127, 0>,
 				NodeWrapper<NodeIds<127, 127, 0>, DataNode_1435995f0>,
 				NodeWrapper<NodeIds<127, 127, 0>, DataNode_143599780>,
-				NodeWrapper<NodeIds<127, 127, 0>, DataNode_143599910>
+				NodeWrapper<NodeIds<127, 127, 0>, CPedHealthDataNode>
 			>,
 			ParentNode<
 				NodeIds<87, 87, 0>,
@@ -2093,7 +2155,7 @@ using CPlayerSyncTree = SyncTree<
 				NodeIds<127, 127, 0>,
 				NodeWrapper<NodeIds<127, 127, 0>, DataNode_1435995f0>,
 				NodeWrapper<NodeIds<127, 127, 0>, DataNode_143599780>,
-				NodeWrapper<NodeIds<127, 127, 0>, DataNode_143599910>
+				NodeWrapper<NodeIds<127, 127, 0>, CPedHealthDataNode>
 			>,
 			ParentNode<
 				NodeIds<87, 87, 0>,
@@ -2453,7 +2515,7 @@ using CHorseSyncTree = SyncTree<
 				NodeIds<127, 127, 0>,
 				NodeWrapper<NodeIds<127, 127, 0>, DataNode_1435995f0>,
 				NodeWrapper<NodeIds<127, 127, 0>, DataNode_143599780>,
-				NodeWrapper<NodeIds<127, 127, 0>, DataNode_143599910>
+				NodeWrapper<NodeIds<127, 127, 0>, CPedHealthDataNode>
 			>,
 			ParentNode<
 				NodeIds<87, 87, 0>,
