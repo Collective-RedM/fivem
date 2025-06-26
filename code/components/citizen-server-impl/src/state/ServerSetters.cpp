@@ -76,6 +76,14 @@ void SetupHeading(const std::shared_ptr<TTree>& tree, float heading)
 {
 	SetupNode(tree, [heading](sync::CEntityOrientationDataNode& node)
 	{
+
+#ifdef STATE_RDR3
+		node.data.rotX = 0.0f;
+		node.data.rotY = 0.0f;
+		node.data.rotZ = heading * 0.01745329252f;
+		return;
+
+#endif
 		glm::quat q = glm::quat(glm::vec3(0.0f, 0.0f, heading * 0.01745329252f));
 		node.data.quat.Load(q.x, q.y, q.z, q.w);
 	});
@@ -85,7 +93,6 @@ void SetupHeading(const std::shared_ptr<TTree>& tree, float heading)
 std::shared_ptr<sync::SyncTreeBase> MakeAutomobile(uint32_t model, float posX, float posY, float posZ, uint32_t resourceHash, float heading = 0.0f)
 {
 	auto tree = std::make_shared<sync::CAutomobileSyncTree>();
-	
 	SetupNode(tree, [model](sync::CVehicleCreationDataNode& cdn)
 	{
 		cdn.m_model = model;
@@ -184,7 +191,6 @@ std::shared_ptr<sync::SyncTreeBase> MakePed(uint32_t model, float posX, float po
 	});
 
 	SetupPosition<sync::CSectorDataNode, sync::CPedSectorPosMapNode>(tree, posX, posY, posZ);
-
 	SetupNode(tree, [heading](sync::CPedOrientationDataNode& node)
 	{
 		node.data.currentHeading = heading * 0.01745329252f;
@@ -216,7 +222,6 @@ std::shared_ptr<sync::SyncTreeBase> MakeObject(uint32_t model, float posX, float
 	});
 
 	SetupPosition<sync::CSectorDataNode, sync::CObjectSectorPosNode>(tree, posX, posY, posZ);
-	
 	SetupNode(tree, [heading](sync::CObjectOrientationDataNode& node)
 	{
 		node.data.highRes = false;
@@ -273,6 +278,68 @@ auto GetNode(sync::NetObjEntityType objectType, const std::shared_ptr<sync::Sync
 			return std::static_pointer_cast<sync::CAutomobileSyncTree>(tree)->GetNode<TNode>();
 		case sync::NetObjEntityType::Train:
 			return std::static_pointer_cast<sync::CTrainSyncTree>(tree)->GetNode<TNode>();
+#ifdef STATE_RDR3
+		case sync::NetObjEntityType::Animal:
+			return std::static_pointer_cast<sync::CAnimalSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::Automobile:
+			return std::static_pointer_cast<sync::CAutomobileSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::Bike:
+			return std::static_pointer_cast<sync::CBikeSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::Boat:
+			return std::static_pointer_cast<sync::CBoatSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::Door:
+			return std::static_pointer_cast<sync::CDoorSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::Heli:
+			return std::static_pointer_cast<sync::CHeliSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::Object:
+			return std::static_pointer_cast<sync::CObjectSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::Ped:
+			return std::static_pointer_cast<sync::CPedSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::Pickup:
+			return std::static_pointer_cast<sync::CPickupSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::PickupPlacement:
+			return std::static_pointer_cast<sync::CPickupPlacementSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::Plane:
+			return std::static_pointer_cast<sync::CPlaneSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::Submarine:
+			return std::static_pointer_cast<sync::CSubmarineSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::Player:
+			return std::static_pointer_cast<sync::CPlayerSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::Trailer:
+			return std::static_pointer_cast<sync::CAutomobileSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::Train:
+			return std::static_pointer_cast<sync::CTrainSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::DraftVeh:
+			return std::static_pointer_cast<sync::CDraftVehSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::StatsTracker:
+			return std::static_pointer_cast<sync::CStatsTrackerSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::PropSet:
+			return std::static_pointer_cast<sync::CPropSetSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::AnimScene:
+			return std::static_pointer_cast<sync::CAnimSceneSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::GroupScenario:
+			return std::static_pointer_cast<sync::CGroupScenarioSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::Herd:
+			return std::static_pointer_cast<sync::CHerdSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::Horse:
+			return std::static_pointer_cast<sync::CHorseSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::WorldState:
+			return std::static_pointer_cast<sync::CWorldStateSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::WorldProjectile:
+			return std::static_pointer_cast<sync::CWorldProjectileSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::Incident:
+			return std::static_pointer_cast<sync::CIncidentSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::Guardzone:
+			return std::static_pointer_cast<sync::CGuardzoneSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::PedGroup:
+			return std::static_pointer_cast<sync::CPedGroupSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::CombatDirector:
+			return std::static_pointer_cast<sync::CCombatDirectorSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::PedSharedTargeting:
+			return std::static_pointer_cast<sync::CPedSharedTargetingSyncTree>(tree)->GetNode<TNode>();
+		case sync::NetObjEntityType::Persistent:
+			return std::static_pointer_cast<sync::CPersistentSyncTree>(tree)->GetNode<TNode>();
+#endif
 	}
 
 	assert(!"Invalid object type!");
