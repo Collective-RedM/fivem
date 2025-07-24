@@ -19,9 +19,12 @@ static uint8_t g_syncTreeDataNodesOffset;
 
 static hook::cdecl_stub<void*(void*, uint16_t)> getSyncTreeForType([]()
 {
+#ifdef GTA_FIVE
 	return hook::get_pattern("0F B7 CA 83 F9 ? 7F");
+#else
+	return hook::get_pattern("0F B7 CA 83 F9");
+#endif
 });
-
 
 uint32_t ReadHashUnsafe(void* vtableEntryPtr)
 {
@@ -53,7 +56,11 @@ uint32_t TryReadHash(void* vtableEntryPtr)
 std::string GetNameFromHash(void* ptr, bool debugFormat)
 {
 	static const char* classNamesTable[] = {
+#ifdef GTA_FIVE
 #include "gta_vtables.h"
+#else
+#include "rdr3_vtables.h"
+#endif
 	};
 
 	static RageHashList rttiHashList(classNamesTable);
@@ -96,6 +103,7 @@ bool AddSyncTreeNodeInfo(std::unordered_map<void*, std::string>& mapping)
 		// It relies on the fact that nodes in m_DataNodes array are always allocated in the same order and don't change from version to version.
 		switch ((fx::sync::NetObjEntityType)i)
 		{
+#ifdef GTA_FIVE
 			case fx::sync::NetObjEntityType::Automobile:
 			{
 				// CAutomobileSyncTree and CTrailerSyncTree  are technically different SyncTrees, but they share the same vtable.
@@ -249,6 +257,78 @@ bool AddSyncTreeNodeInfo(std::unordered_map<void*, std::string>& mapping)
 				mapping[**(void***)(dataNodes + 5 * 8)] = "CTrainGameStateDataNode";
 				break;
 			}
+#else
+			// 0x1435e2ef8 = CPhysicalAttachNode
+			case fx::sync::NetObjEntityType::Door:
+			{
+				mapping[*(void**)synTree] = "CDoorSyncTree";
+				mapping[**(void***)(dataNodes + 0 * 8)] = "CDoorCreationNode";
+				mapping[**(void***)(dataNodes + 2 * 8)] = "CDoorDamageNode";
+				mapping[**(void***)(dataNodes + 3 * 8)] = "CDoorMovementNode";
+				break;
+			}
+			case fx::sync::NetObjEntityType::Ped:
+			{
+				mapping[*(void**)synTree] = "CPedSyncTree";
+				mapping[**(void***)(dataNodes + 0 * 8)] = "CPedCreationDataNode";
+				mapping[**(void***)(dataNodes + 1 * 8)] = "CPedScriptCreationDataNode";
+				break;
+			}
+			case fx::sync::NetObjEntityType::PickupPlacement:
+			{
+				mapping[*(void**)synTree] = "CPickupPlacementSyncTree";
+				mapping[**(void***)(dataNodes + 0 * 8)] = "CPickupPlacementCreationNode";
+				mapping[**(void***)(dataNodes + 3 * 8)] = "CPickupPlacementStateNode";
+				break;
+			}
+			case fx::sync::NetObjEntityType::Player:
+			{
+				mapping[*(void**)synTree] = "CPlayerSyncTree";
+				mapping[**(void***)(dataNodes + 0 * 8)] = "CPlayerCreationDataNode";
+				mapping[**(void***)(dataNodes + 1 * 8)] = "CGlobalFlagsDataNode";
+				mapping[**(void***)(dataNodes + 2 * 8)] = "CDynamicEntityGameStateDataNode";
+				mapping[**(void***)(dataNodes + 3 * 8)] = "CPhysicalGameStateDataNode";
+				mapping[**(void***)(dataNodes + 4 * 8)] = "CPedGameStateNode";
+				mapping[**(void***)(dataNodes + 5 * 8)] = "CPedScriptGameStateUncommonDataNode";
+				mapping[**(void***)(dataNodes + 8 * 8)] = "CPedInteractionNode";
+				mapping[**(void***)(dataNodes + 12 * 8)] = "CEntityScriptGameStateDataNode";
+				mapping[**(void***)(dataNodes + 14 * 8)] = "CPlayerGameStateDataNode";
+				mapping[**(void***)(dataNodes + 16 * 8)] = "CPedAttachNode";
+				mapping[**(void***)(dataNodes + 17 * 8)] = "CPedComponentReservationNode";
+				mapping[**(void***)(dataNodes + 18 * 8)] = "CPlayerHealthNode";
+				mapping[**(void***)(dataNodes + 19 * 8)] = "CPedHealthDataNode";
+				mapping[**(void***)(dataNodes + 22 * 8)] = "CPedMovementGroupNode";
+				mapping[**(void***)(dataNodes + 23 * 8)] = "CPedAINode";
+				mapping[**(void***)(dataNodes + 24 * 8)] = "CPedEmotionalLocoNode";
+				mapping[**(void***)(dataNodes + 26 * 8)] = "CPlayerAppearanceDataNode";
+				mapping[**(void***)(dataNodes + 27 * 8)] = "CPlayerCharacterCreatorDataNode";
+				mapping[**(void***)(dataNodes + 28 * 8)] = "CPlayerAmbientModelStreamingDataNode";
+				mapping[**(void***)(dataNodes + 29 * 8)] = "CPlayerGamerDataNode";
+				mapping[**(void***)(dataNodes + 31 * 8)] = "CPlayerVoiceDataNode";
+				mapping[**(void***)(dataNodes + 32 * 8)] = "CPlayerWeaponInventoryDataNode";
+				mapping[**(void***)(dataNodes + 33 * 8)] = "CPedWeaponDataNode";
+				mapping[**(void***)(dataNodes + 34 * 8)] = "CPedVehicleDataNode";
+				mapping[**(void***)(dataNodes + 36 * 8)] = "CPlayerSpawnSearchDataNode";
+				mapping[**(void***)(dataNodes + 37 * 8)] = "CPlayerAudioScriptBankDataNode";
+				mapping[**(void***)(dataNodes + 43 * 8)] = "CPlayerGoalsDataNode";
+				mapping[**(void***)(dataNodes + 45 * 8)] = "CPedFacialAppearanceDataNode";
+				mapping[**(void***)(dataNodes + 46 * 8)] = "CPedStandingOnObjectDataNode";
+				mapping[**(void***)(dataNodes + 47 * 8)] = "CPedOrientationDataNode";
+				mapping[**(void***)(dataNodes + 48 * 8)] = "CPhysicalVelocityDataNode";
+				mapping[**(void***)(dataNodes + 49 * 8)] = "CPedMovementDataNode";
+				mapping[**(void***)(dataNodes + 54 * 8)] = "CPedTaskPriorityNode";
+				mapping[**(void***)(dataNodes + 55 * 8)] = "CPedTaskUpdateNode";
+				mapping[**(void***)(dataNodes + 56 * 8)] = "CSectorDataNode";
+				mapping[**(void***)(dataNodes + 57 * 8)] = "CPlayerSectorPosNode";
+				mapping[**(void***)(dataNodes + 58 * 8)] = "CPlayerCameraDataNode";
+				mapping[**(void***)(dataNodes + 59 * 8)] = "CPlayerCameraUncommonDataNode";
+				mapping[**(void***)(dataNodes + 60 * 8)] = "CPlayerWantedAndLOSNode";
+				mapping[**(void***)(dataNodes + 61 * 8)] = "CMigrationDataNode";
+				mapping[**(void***)(dataNodes + 62 * 8)] = "CPhysicalMigrationDataNode";
+				mapping[**(void***)(dataNodes + 63 * 8)] = "CPhysicalScriptMigrationDataNode";
+				break;
+			}
+#endif
 		}
 	}
 
@@ -314,7 +394,8 @@ std::string SearchTypeName(void* ptr, bool debugFormat)
 			return GetVtableAddress(ptr, debugFormat);
 		}
 	}
-
+#endif
+	
 	std::string typeName = GetNameFromVtableMapping(ptr, debugFormat);
 	if (!typeName.empty())
 	{
@@ -329,14 +410,11 @@ std::string SearchTypeName(void* ptr, bool debugFormat)
 
 	// Failed to find type information. Fallback to returning vtable address.
 	return GetVtableAddress(ptr, debugFormat);
-#else
-	// Custom RTTI search is only supported for GTA5. Return vtable address instead.
-	return GetVtableAddress(ptr, debugFormat);
-#endif
 }
 
 static HookFunction hookFunction([] ()
 {
+#if defined(GTA_FIVE)
 	g_syncTreeDataNodesOffset = *(uint8_t*)hook::get_pattern("48 8D 4B ? 33 D2 41 B8 ? ? ? ? E8 ? ? ? ? 48 8D 8B ? ? ? ? 33 D2 41 B8 ? ? ? ? E8 ? ? ? ? 48 8B C3", 3);
 
 	void* CDynamicEntitySyncTreeBase = nullptr;
@@ -396,4 +474,14 @@ static HookFunction hookFunction([] ()
 			"CProximityMigrateableSyncTreeBase"
 		},
 	};
+#else
+	g_syncTreeDataNodesOffset = *(uint32_t*)hook::get_pattern("4C 8B B4 FE", 0x4);
+
+	g_vtableToTypeNameMapping = {
+		{
+			hook::get_address<void*>(hook::get_pattern("48 8D 05 ? ? ? ? 48 8D BE ? ? ? ? 48 89 03"), 3, 7),
+			"CProjectBaseSyncParentNode"
+		},
+	};
+#endif
 });
