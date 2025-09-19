@@ -57,6 +57,7 @@ static std::atomic<int> g_isFocusStolenCount;
 static std::map<int, std::vector<InputHook::ControlBypass>> g_controlBypasses;
 
 static bool g_useHostCursor;
+static bool g_needsRecaptureCursor = false;
 
 void EnableHostCursor()
 {
@@ -221,6 +222,27 @@ LRESULT APIENTRY sgaWindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 	if (uMsg == WM_ACTIVATEAPP)
 	{
 		g_isFocused = (wParam) ? true : false;
+		
+		// If we're gaining focus, we need to recapture the cursor
+		if (g_isFocused)
+		{
+			g_needsRecaptureCursor = true;
+		}
+		else
+		{
+			// If we're losing focus, ensure cursor is unclipped
+			ClipHostCursor(nullptr);
+		}
+	}
+	
+	if (uMsg == WM_SETFOCUS)
+	{
+		g_needsRecaptureCursor = true;
+	}
+	
+	if (uMsg == WM_KILLFOCUS)
+	{
+		ClipHostCursor(nullptr);
 	}
 
 	if (uMsg >= WM_KEYFIRST && uMsg <= WM_KEYLAST)
@@ -332,6 +354,17 @@ BOOL WINAPI ClipCursorWrap(const RECT* lpRekt)
 		InputHook::QueryMayLockCursor(may);
 		lpResult = may != 0 ? lpRekt : nullptr;
 	}
+	
+	// If we have focus and a rect is provided, ensure we actually clip
+	if (lpResult && g_isFocused)
+	{
+		return ClipHostCursor(lpResult);
+	}
+	else if (!lpResult)
+	{
+		return ClipHostCursor(nullptr);
+	}
+	
 	return ClipHostCursor(lpResult);
 }
 
@@ -368,6 +401,33 @@ static HookFunction hookFunction([]()
 		{
 			ClipHostCursor(nullptr);
 			*captureCount = 0;
+			g_needsRecaptureCursor = false;
+		}
+		else
+		{
+			// If we need to recapture the cursor and we're allowed to lock it
+			if (g_needsRecaptureCursor && g_isFocused)
+			{
+				// Get the current window rect and set cursor clipping
+				HWND gameWnd = FindWindow(L"sgaWindow", nullptr);
+				if (gameWnd)
+				{
+					RECT windowRect;
+					if (GetClientRect(gameWnd, &windowRect))
+					{
+						POINT topLeft = {windowRect.left, windowRect.top};
+						POINT bottomRight = {windowRect.right, windowRect.bottom};
+						
+						ClientToScreen(gameWnd, &topLeft);
+						ClientToScreen(gameWnd, &bottomRight);
+						
+						RECT screenRect = {topLeft.x, topLeft.y, bottomRight.x, bottomRight.y};
+						ClipHostCursor(&screenRect);
+						
+						g_needsRecaptureCursor = false;
+					}
+				}
+			}
 		}
 	});
 
