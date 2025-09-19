@@ -73,6 +73,17 @@ void DisableHostCursor()
 
 static INT HookShowCursor(BOOL show)
 {
+	// Check if cursor locking is allowed (console might be open)
+	int may = 1;
+	InputHook::QueryMayLockCursor(may);
+	
+	// If console is open, always allow normal cursor behavior
+	if (may == 0)
+	{
+		return ShowCursor(show);
+	}
+
+	// If host cursor is enabled, return fake values
 	if (g_useHostCursor)
 	{
 		return (show) ? 0 : -1;
@@ -234,7 +245,7 @@ LRESULT APIENTRY sgaWindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 			ClipHostCursor(nullptr);
 		}
 	}
-	
+
 	if (uMsg == WM_SETFOCUS)
 	{
 		g_needsRecaptureCursor = true;
@@ -352,17 +363,14 @@ BOOL WINAPI ClipCursorWrap(const RECT* lpRekt)
 	{
 		int may = 1;
 		InputHook::QueryMayLockCursor(may);
-		lpResult = may != 0 ? lpRekt : nullptr;
-	}
-	
-	// If we have focus and a rect is provided, ensure we actually clip
-	if (lpResult && g_isFocused)
-	{
-		return ClipHostCursor(lpResult);
-	}
-	else if (!lpResult)
-	{
-		return ClipHostCursor(nullptr);
+		
+		// If not allowed to lock cursor (e.g., console is open), don't clip
+		if (may == 0)
+		{
+			return ClipHostCursor(nullptr);
+		}
+		
+		lpResult = lpRekt;
 	}
 	
 	return ClipHostCursor(lpResult);
@@ -375,7 +383,12 @@ HKL WINAPI ActivateKeyboardLayoutWrap(IN HKL hkl, IN UINT flags)
 
 BOOL WINAPI SetCursorPosWrap(int X, int Y)
 {
-	if (!g_isFocused || g_enableSetCursorPos)
+	// Check if cursor locking is allowed (console might be open)
+	int may = 1;
+	InputHook::QueryMayLockCursor(may);
+	
+	// If cursor locking is not allowed or SetCursorPos is enabled, allow movement
+	if (may == 0 || !g_isFocused || g_enableSetCursorPos)
 	{
 		return SetCursorPos(X, Y);
 	}
