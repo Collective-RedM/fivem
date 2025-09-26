@@ -3,8 +3,16 @@
 #include <Hooking.h>
 #include <MinHook.h>
 
+#include "atArray.h"
+#include "fxScripting.h"
+#include "Hooking.Stubs.h"
+#include "Resource.h"
+#include "om/OMPtr.h"
+
 static void* g_sm_bootstrapInstance;
 static void* g_uiMinimap;
+
+static bool g_DISPLAY_AMMO = true;
 
 static hook::cdecl_stub<void(void*, char)> g_uiMinimap_SetType([]()
 {
@@ -16,6 +24,18 @@ static hook::cdecl_stub<uint32_t(void*)> g_uiMinimap_GetType([]()
 	return hook::get_call(hook::get_pattern("E8 ? ? ? ? 83 F8 ? 74 ? 48 8D 15"));
 });
 
+static bool (*g_origUICondContextStoreEval)(hook::FlexStruct* self, void* a2);
+static bool UICondContextStoreEval(hook::FlexStruct* self, void* a2)
+{
+	int contextHash = self->At<int>(0x10);
+	if (!g_DISPLAY_AMMO && contextHash == 0x3F129E06) // HUD_CTX_INFINITE_AMMO
+	{
+		return true;
+	}
+	
+	return g_origUICondContextStoreEval(self, a2);
+}
+
 static HookFunction hookFunction([]()
 {
 	{
@@ -24,6 +44,10 @@ static HookFunction hookFunction([]()
 		uint32_t uiMinimapOffset = *hook::get_pattern<uint32_t>("33 D2 48 8B CB 45 8D 44 24 ? E8", -16);
 
 		g_uiMinimap = (char*)g_sm_bootstrapInstance + uiMinimapOffset;
+	}
+
+	{
+		g_origUICondContextStoreEval = hook::trampoline(hook::get_pattern("48 89 5C 24 ? 57 48 83 EC ? 8B 05 ? ? ? ? 4C 8B C2 48 8B F9 89 44 24 ? 49 8B C8 48 8D 54 24 ? E8"), UICondContextStoreEval);
 	}
 
 	fx::ScriptEngine::RegisterNativeHandler("SET_MINIMAP_TYPE", [](fx::ScriptContext& context)
@@ -38,6 +62,23 @@ static HookFunction hookFunction([]()
 	{
 		uint32_t minimapType = g_uiMinimap_GetType(g_uiMinimap);
 		context.SetResult<int>(minimapType);
+	});
+
+	fx::ScriptEngine::RegisterNativeHandler("DISPLAY_AMMO", [](fx::ScriptContext& context) 
+	{
+		bool value = context.GetArgument<bool>(0);
+		g_DISPLAY_AMMO = value;
+
+		fx::OMPtr<IScriptRuntime> runtime;
+		if (FX_SUCCEEDED(fx::GetCurrentScriptRuntime(&runtime)))
+		{
+			fx::Resource* resource = reinterpret_cast<fx::Resource*>(runtime->GetParentObject());
+
+			resource->OnStop.Connect([]()
+			{
+				g_DISPLAY_AMMO = true;
+			});
+		}
 	});
 
 	/*
